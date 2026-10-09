@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دفتر حسابي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EEF1F4; --card:#FFFFFF; --line:#C9D2DA;
+  --head:#2C5C82; --head-text:#FFFFFF;
+  --ink:#1E2A33; --ink-soft:#64707A;
+  --credit:#2E7D4F; --debit:#B33A3A; --accent:#C98A2E;
+  --stripe:#F4F7FA;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#171B1F; --card:#20262C; --line:#333D46; --ink:#E4E8EB; --ink-soft:#8B98A3; --stripe:#262D34; }
+}
+:root[data-theme="dark"]{ --bg:#171B1F; --card:#20262C; --line:#333D46; --ink:#E4E8EB; --ink-soft:#8B98A3; --stripe:#262D34; }
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Cairo',sans-serif;min-height:100%;font-variant-numeric:tabular-nums;}
+.wrap{max-width:680px;margin:0 auto;padding:18px 14px 96px;}
+header{margin-bottom:14px;}
+header h1{font-size:22px;font-weight:900;margin:0 0 3px;color:var(--head);}
+header p{margin:0;color:var(--ink-soft);font-size:12.5px;}
+
+.tabs{position:fixed;bottom:0;left:0;right:0;z-index:20;display:flex;background:var(--card);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px 7px;border:none;background:transparent;
+  font-family:inherit;font-size:11px;font-weight:700;color:var(--ink-soft);cursor:pointer;}
+.tabs button .ic{font-size:19px;line-height:1.1;}
+.tabs button.active{color:var(--head);box-shadow:inset 0 2px 0 var(--head);}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;margin-bottom:14px;overflow:hidden;}
+.panel-head{background:var(--head);color:var(--head-text);font-size:13px;font-weight:700;padding:9px 12px;}
+
+.stats{display:flex;gap:8px;margin-bottom:14px;}
+.stat{flex:1;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 6px;text-align:center;}
+.stat .label{font-size:11px;color:var(--ink-soft);margin-bottom:4px;}
+.stat .val{font-size:14px;font-weight:700;color:var(--ink);}
+.stat.balance .val{color:var(--head);font-size:15px;}
+.stat.income .val{color:var(--credit);}
+.stat.expense .val{color:var(--debit);}
+
+.box-grid{display:flex;gap:8px;margin-bottom:14px;}
+.box{flex:1;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:16px 10px;text-align:center;}
+.box .label{font-size:12px;color:var(--ink-soft);margin-bottom:5px;}
+.box .val{font-size:20px;font-weight:900;color:var(--head);}
+
+form{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:14px;margin-bottom:14px;}
+.toggle{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-bottom:12px;}
+.toggle button{flex:1;padding:10px;border:none;background:transparent;font-family:inherit;font-size:13px;font-weight:700;
+  color:var(--ink-soft);cursor:pointer;}
+.toggle button.active[data-t="in"]{background:var(--credit);color:#fff;}
+.toggle button.active[data-t="out"]{background:var(--debit);color:#fff;}
+.toggle button.active[data-k="cash"]{background:var(--credit);color:#fff;}
+.toggle button.active[data-k="credit"]{background:var(--accent);color:#fff;}
+
+.row{display:flex;gap:8px;margin-bottom:10px;}
+.field{flex:1;}
+label{display:block;font-size:11.5px;color:var(--ink-soft);margin-bottom:4px;}
+input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:4px;
+  background:var(--bg);color:var(--ink);font-family:inherit;font-size:13.5px;}
+.addbtn{width:100%;padding:11px;border:none;border-radius:4px;background:var(--head);
+  color:#fff;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;margin-top:2px;}
+.addbtn:active{opacity:0.85;}
+
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12.5px;min-width:480px;}
+thead th{background:var(--head);color:var(--head-text);font-weight:700;padding:8px 8px;text-align:center;white-space:nowrap;border-left:1px solid rgba(255,255,255,.15);}
+thead th:last-child{border-left:none;}
+tbody td{padding:8px 8px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap;}
+tbody tr:nth-child(even){background:var(--stripe);}
+tbody td.desc-cell{text-align:right;white-space:normal;max-width:140px;}
+td.credit{color:var(--credit);font-weight:700;}
+td.debit{color:var(--debit);font-weight:700;}
+td.due-cell{color:var(--accent);font-weight:700;}
+td.bal-cell{font-weight:800;}
+.del{border:none;background:none;color:var(--ink-soft);font-size:14px;cursor:pointer;padding:1px 4px;}
+.markbtn{border:1px solid var(--credit);background:transparent;color:var(--credit);font-family:inherit;
+  font-size:10.5px;padding:4px 8px;border-radius:4px;cursor:pointer;white-space:nowrap;}
+
+.empty{padding:22px 12px;text-align:center;color:var(--ink-soft);font-size:13px;}
+
+.statement-summary{display:flex;gap:8px;margin-bottom:12px;}
+.sum-box{flex:1;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 6px;text-align:center;}
+.sum-box .label{font-size:11px;color:var(--ink-soft);margin-bottom:4px;}
+.sum-box .val{font-size:13.5px;font-weight:800;}
+
+.banner{display:none;align-items:center;justify-content:space-between;gap:10px;background:#FBF0DA;
+  border:1px solid var(--accent);color:#6B4E17;border-radius:6px;padding:11px 13px;margin-bottom:14px;font-size:13px;}
+:root:not([data-theme="light"]) .banner{background:#3A331E;color:#E8D9AE;}
+.banner button{border:none;background:var(--accent);color:#fff;font-family:inherit;font-weight:700;
+  font-size:12px;padding:6px 13px;border-radius:4px;cursor:pointer;white-space:nowrap;}
+
+.recon-form{display:flex;gap:8px;margin-bottom:10px;}
+.section-label{font-size:12.5px;font-weight:700;color:var(--ink-soft);margin:14px 2px 8px;}
+
+.toolbar{display:flex;gap:8px;margin-bottom:12px;}
+.toolbar input{flex:1;}
+.printbtn{border:1px solid var(--head);background:var(--card);color:var(--head);font-family:inherit;
+  font-weight:700;font-size:12.5px;padding:0 14px;border-radius:4px;cursor:pointer;white-space:nowrap;}
+
+.chips{display:flex;gap:6px;margin-bottom:10px;}
+.chips button{flex:1;padding:8px 4px;border:1px solid var(--line);background:var(--card);border-radius:20px;font-family:inherit;
+  font-size:12px;font-weight:700;color:var(--ink-soft);cursor:pointer;white-space:nowrap;}
+.chips button.active{background:var(--head);color:#fff;border-color:var(--head);}
+.addtoggle{width:100%;padding:11px;margin-bottom:12px;border:1px dashed var(--head);background:transparent;color:var(--head);
+  font-family:inherit;font-weight:700;font-size:13.5px;border-radius:6px;cursor:pointer;}
+form.collapsed{display:none;}
+.sub{font-size:10.5px;color:var(--ink-soft);margin-top:2px;font-weight:400;}
+.qty-input{width:64px;padding:5px 6px;text-align:center;}
+.stmt-bar{display:flex;gap:8px;padding:12px;}
+.stmt-bar select{flex:1;}
+.stmt-bar .printbtn{padding:0 12px;}
+.msg{color:var(--debit);font-size:12px;margin:0 0 8px;min-height:0;}
+tr.clickable{cursor:pointer;}
+
+@media print{
+  .tabs,.banner,form,.toolbar,.addbtn,.addtoggle,.chips,.printbtn,.del,.markbtn,.stmt-bar{display:none !important;}
+  body{background:#fff;}
+  .panel{border:1px solid #999;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>دفتر حسابي</h1>
+    <p>إيصالات، صندوق، فواتير، زبائن، ومواد</p>
+  </header>
+
+  <div class="banner" id="reconBanner">
+    <span>لسا ما سويت مطابقة الصندوق اليوم 🕐</span>
+    <button id="reconBannerBtn">طابق الآن</button>
+  </div>
+
+  <div class="tabs">
+    <button class="active" data-tab="tx"><span class="ic">🧾</span>الإيصالات</button>
+    <button data-tab="box"><span class="ic">💰</span>الصندوق</button>
+    <button data-tab="inv"><span class="ic">📄</span>الفواتير</button>
+    <button data-tab="stmt"><span class="ic">👥</span>الزبائن</button>
+    <button data-tab="prof"><span class="ic">📦</span>المواد</button>
+  </div>
+
+  <!-- TAB: transactions / vouchers -->
+  <div class="tab-content active" id="tab-tx">
+    <div class="stats">
+      <div class="stat balance"><div class="label">الرصيد</div><div class="val" id="balVal">0</div></div>
+      <div class="stat income"><div class="label">قبض</div><div class="val" id="inVal">0</div></div>
+      <div class="stat expense"><div class="label">دفع</div><div class="val" id="outVal">0</div></div>
+    </div>
+
+    <div class="toolbar">
+      <input type="text" id="txSearch" placeholder="بحث بالوصف أو التصنيف...">
+      <button class="printbtn" onclick="window.print()">طباعة 🖨️</button>
+    </div>
+
+    <button type="button" class="addtoggle" data-target="form" data-open="＋ إيصال جديد" data-close="✕ إغلاق النموذج">＋ إيصال جديد</button>
+    <form id="form" class="collapsed">
+      <div class="toggle">
+        <button type="button" data-t="in" class="active">إيصال قبض</button>
+        <button type="button" data-t="out">إيصال دفع</button>
+      </div>
+      <div class="row">
+        <div class="field"><label>المبلغ</label><input type="number" id="amount" placeholder="0" step="0.01" required></div>
+        <div class="field"><label>العملة</label>
+          <select id="curr"><option value="IQD">دينار عراقي</option><option value="USD">دولار أمريكي</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>التاريخ</label><input type="date" id="date" required></div>
+        <div class="field"><label>التصنيف</label>
+          <select id="cat"><option>مبيعات</option><option>مشتريات</option><option>رواتب</option><option>إيجار</option><option>نقليات</option><option>أخرى</option></select>
+        </div>
+      </div>
+      <div class="row"><div class="field"><label>الوصف / الجهة</label><input type="text" id="desc" placeholder="مثال: بيع بضاعة لزبون" required></div></div>
+      <button type="submit" class="addbtn" id="addBtn">إضافة إيصال قبض</button>
+    </form>
+
+    <div class="panel">
+      <div class="panel-head">سجل الإيصالات</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>رقم</th><th>التاريخ</th><th>البيان</th><th>التصنيف</th><th>العملة</th><th>المبلغ</th><th></th></tr></thead>
+        <tbody id="txBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- TAB: cash box -->
+  <div class="tab-content" id="tab-box">
+    <div class="box-grid">
+      <div class="box"><div class="label">صندوق الدينار العراقي</div><div class="val" id="boxIQD">0</div></div>
+      <div class="box"><div class="label">صندوق الدولار الأمريكي</div><div class="val" id="boxUSD">$0</div></div>
+    </div>
+
+    <div class="panel" id="reconSection">
+      <div class="panel-head">المطابقة اليومية</div>
+      <div style="padding:12px;">
+        <p style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;">عد الفلوس الموجودة فعلياً بالصندوق وقارنها مع رصيد الدفتر</p>
+        <div class="recon-form">
+          <div class="field"><label>النقد الفعلي - دينار</label><input type="number" id="reconIQD" placeholder="0" step="0.01"></div>
+          <div class="field"><label>النقد الفعلي - دولار</label><input type="number" id="reconUSD" placeholder="0" step="0.01"></div>
+        </div>
+        <button class="addbtn" id="reconBtn" style="background:var(--accent);">طابق الصندوقين الآن</button>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>التاريخ</th><th>الوقت</th><th>فرق الدينار</th><th>فرق الدولار</th></tr></thead>
+        <tbody id="reconBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- TAB: invoices -->
+  <div class="tab-content" id="tab-inv">
+    <div class="stats">
+      <div class="stat expense"><div class="label">مستحقة (دينار)</div><div class="val" id="dueIQD">0</div></div>
+      <div class="stat expense"><div class="label">مستحقة (دولار)</div><div class="val" id="dueUSD">$0</div></div>
+      <div class="stat"><div class="label">متأخرة</div><div class="val" id="overdueCnt">0</div></div>
+    </div>
+    <button type="button" class="addtoggle" data-target="invForm" data-open="＋ فاتورة جديدة" data-close="✕ إغلاق النموذج">＋ فاتورة جديدة</button>
+    <form id="invForm" class="collapsed">
+      <div class="toggle" id="invKindToggle">
+        <button type="button" data-k="cash" class="active">فاتورة نقد</button>
+        <button type="button" data-k="credit">فاتورة أجل</button>
+      </div>
+      <div class="row">
+        <div class="field"><label>اسم الزبون</label><input type="text" id="invCustomer" list="custList" placeholder="اسم الزبون" required><datalist id="custList"></datalist></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>المادة (اختياري)</label><select id="invProduct"><option value="">— بدون مادة —</option></select></div>
+        <div class="field"><label>الكمية</label><input type="number" id="invQty" value="1" min="0" step="1"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>المبلغ</label><input type="number" id="invAmount" placeholder="0" step="0.01" required></div>
+        <div class="field"><label>العملة</label><select id="invCurr"><option value="IQD">دينار عراقي</option><option value="USD">دولار أمريكي</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label id="invDateLabel">تاريخ الفاتورة</label><input type="date" id="invDate" required></div>
+      </div>
+      <div class="msg" id="invMsg"></div>
+      <button type="submit" class="addbtn">إضافة فاتورة</button>
+    </form>
+    <div class="chips" id="invChips">
+      <button data-f="all" class="active">الكل</button>
+      <button data-f="due">مستحقة</button>
+      <button data-f="paid">مسددة</button>
+    </div>
+    <div class="toolbar"><input type="text" id="invSearch" placeholder="بحث باسم الزبون أو المادة..."></div>
+    <div class="panel">
+      <div class="panel-head">الفواتير</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>التاريخ</th><th>الزبون</th><th>النوع</th><th>المبلغ</th><th>الحالة</th><th></th></tr></thead>
+        <tbody id="invBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- TAB: customer statement -->
+  <div class="tab-content" id="tab-stmt">
+    <div class="panel">
+      <div class="panel-head">كشف حساب الزبون</div>
+      <div class="stmt-bar">
+        <select id="stmtCustomer"><option value="">— كل الزبائن —</option></select>
+        <button class="printbtn" onclick="window.print()">طباعة 🖨️</button>
+      </div>
+    </div>
+    <div id="stmtBody"></div>
+  </div>
+
+  <!-- TAB: products -->
+  <div class="tab-content" id="tab-prof">
+    <div class="stats">
+      <div class="stat"><div class="label">قيمة المخزون (بالكلفة)</div><div class="val" id="stockVal">0</div></div>
+      <div class="stat income"><div class="label">أرباح المبيعات</div><div class="val" id="realizedVal">0</div></div>
+    </div>
+    <button type="button" class="addtoggle" data-target="prodForm" data-open="＋ مادة جديدة" data-close="✕ إغلاق النموذج">＋ مادة جديدة</button>
+    <form id="prodForm" class="collapsed">
+      <div class="row"><div class="field"><label>اسم المادة</label><input type="text" id="prodName" placeholder="مثال: علبة شاي" required></div></div>
+      <div class="row">
+        <div class="field"><label>الكمية بالمخزون</label><input type="number" id="prodQty" value="0" min="0" step="1"></div>
+        <div class="field"><label>العملة</label><select id="prodCurr"><option value="IQD">دينار عراقي</option><option value="USD">دولار أمريكي</option></select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>سعر الكلفة</label><input type="number" id="prodCost" placeholder="0" step="0.01" required></div>
+        <div class="field"><label>سعر البيع</label><input type="number" id="prodPrice" placeholder="0" step="0.01" required></div>
+      </div>
+      <button type="submit" class="addbtn">إضافة مادة</button>
+    </form>
+    <div class="panel">
+      <div class="panel-head">المواد والمخزون وهامش الربح</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>المادة</th><th>الكمية</th><th>الكلفة</th><th>البيع</th><th>الربح</th><th>النسبة</th><th></th></tr></thead>
+        <tbody id="prodBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.querySelectorAll('.tabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+  });
+});
+
+document.querySelectorAll('.addtoggle').forEach(b=>b.addEventListener('click',()=>{
+  const f = document.getElementById(b.dataset.target);
+  const closed = f.classList.toggle('collapsed');
+  b.textContent = closed ? b.dataset.open : b.dataset.close;
+}));
+function collapseForm(id){
+  document.getElementById(id).classList.add('collapsed');
+  const b = document.querySelector('.addtoggle[data-target="'+id+'"]');
+  if(b) b.textContent = b.dataset.open;
+}
+
+function fmt(n){ return new Intl.NumberFormat('en-US').format(Math.round(n*100)/100); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function load(key){ try{ const s=localStorage.getItem(key); return s?JSON.parse(s):[]; }catch(e){ return []; } }
+function persist(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+function fmtCurr(n,c){ return c==='USD' ? '$'+fmt(n) : fmt(n); }
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return ymd(new Date()); }
+function oneMonthLater(){
+  const d = new Date(); const day = d.getDate();
+  d.setMonth(d.getMonth()+1);
+  if(d.getDate()!==day) d.setDate(0);
+  return ymd(d);
+}
+
+/* ---------- vouchers (قبض/دفع) ---------- */
+let type = 'in';
+const toggleBtns = document.querySelectorAll('#form .toggle button');
+const addBtn = document.getElementById('addBtn');
+toggleBtns.forEach(b=>b.addEventListener('click',()=>{
+  toggleBtns.forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  type = b.dataset.t;
+  addBtn.textContent = type==='in' ? 'إضافة إيصال قبض' : 'إضافة إيصال دفع';
+  addBtn.style.background = type==='in' ? 'var(--credit)' : 'var(--debit)';
+}));
+document.getElementById('date').value = todayStr();
+
+let items = load('daftar_items');
+items.forEach(i=>{ if(!i.curr) i.curr='IQD'; });
+let curBoxIQD = 0, curBoxUSD = 0;
+
+function voucherNo(it){
+  const sameType = items.filter(x=>x.type===it.type).sort((a,b)=>a.id-b.id);
+  return sameType.findIndex(x=>x.id===it.id) + 1;
+}
+
+function render(){
+  const body = document.getElementById('txBody');
+  body.innerHTML = '';
+  const q = (document.getElementById('txSearch').value || '').trim().toLowerCase();
+  const visible = q ? items.filter(i=> i.desc.toLowerCase().includes(q) || i.cat.toLowerCase().includes(q)) : items;
+  if(items.length===0){
+    body.innerHTML = '<tr><td colspan="7" class="empty">ماكو إيصالات بعد</td></tr>';
+  } else if(visible.length===0){
+    body.innerHTML = '<tr><td colspan="7" class="empty">ماكو نتائج مطابقة للبحث</td></tr>';
+  } else {
+    const sorted = [...visible].sort((a,b)=> b.date.localeCompare(a.date) || b.id-a.id);
+    sorted.forEach(it=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${it.type==='in'?'ق':'د'}${voucherNo(it)}</td>
+        <td>${it.date}</td>
+        <td class="desc-cell">${it.desc}</td>
+        <td>${it.cat}</td>
+        <td>${it.curr==='USD'?'دولار':'دينار'}</td>
+        <td class="${it.type==='in'?'credit':'debit'}">${it.type==='in'?'+':'-'}${fmtCurr(it.amount,it.curr)}</td>
+        <td><button class="del" data-id="${it.id}">✕</button></td>`;
+      body.appendChild(tr);
+    });
+    body.querySelectorAll('.del').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        items = items.filter(i=>i.id !== Number(btn.dataset.id));
+        persist('daftar_items', items); renderAll();
+      });
+    });
+  }
+
+  const inIQD = items.filter(i=>i.type==='in'&&i.curr==='IQD').reduce((s,i)=>s+i.amount,0);
+  const outIQD = items.filter(i=>i.type==='out'&&i.curr==='IQD').reduce((s,i)=>s+i.amount,0);
+  const inUSD = items.filter(i=>i.type==='in'&&i.curr==='USD').reduce((s,i)=>s+i.amount,0);
+  const outUSD = items.filter(i=>i.type==='out'&&i.curr==='USD').reduce((s,i)=>s+i.amount,0);
+
+  document.getElementById('inVal').textContent = fmt(inIQD)+' / $'+fmt(inUSD);
+  document.getElementById('outVal').textContent = fmt(outIQD)+' / $'+fmt(outUSD);
+  document.getElementById('balVal').textContent = fmt(inIQD-outIQD)+' / $'+fmt(inUSD-outUSD);
+
+  curBoxIQD = inIQD-outIQD; curBoxUSD = inUSD-outUSD;
+  document.getElementById('boxIQD').textContent = fmt(curBoxIQD);
+  document.getElementById('boxUSD').textContent = '$'+fmt(curBoxUSD);
+}
+document.getElementById('txSearch').addEventListener('input', render);
+
+document.getElementById('form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const amount = parseFloat(document.getElementById('amount').value);
+  const date = document.getElementById('date').value;
+  const desc = document.getElementById('desc').value.trim();
+  const cat = document.getElementById('cat').value;
+  const curr = document.getElementById('curr').value;
+  if(!amount || amount<=0 || !desc || !date) return;
+  items.push({id: Date.now(), type, amount, date, desc, cat, curr});
+  persist('daftar_items', items);
+  document.getElementById('amount').value=''; document.getElementById('desc').value='';
+  renderAll();
+});
+
+/* ---------- invoices ---------- */
+let invoices = load('daftar_invoices');
+let products = load('daftar_products');
+products.forEach(p=>{ if(p.qty==null) p.qty=0; if(!p.curr) p.curr='IQD'; });
+document.getElementById('invDate').value = todayStr();
+document.getElementById('form').addEventListener('submit', ()=>{ if(!document.getElementById('desc').value) collapseForm('form'); });
+let invKind = 'cash', invFilter = 'all';
+function kindLabel(inv){ return inv.kind==='cash' ? 'نقد' : 'أجل'; }
+document.querySelectorAll('#invKindToggle button').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#invKindToggle button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  invKind = b.dataset.k;
+  document.getElementById('invDateLabel').textContent = invKind==='cash' ? 'تاريخ الفاتورة' : 'تاريخ الاستحقاق (تلقائي بعد شهر)';
+  document.getElementById('invDate').value = invKind==='cash' ? todayStr() : oneMonthLater();
+}));
+function addReceiptFor(inv, date){
+  const vid = Date.now() + 1;
+  items.push({id: vid, type:'in', amount: inv.amount, date, desc: 'فاتورة '+kindLabel(inv)+' - '+inv.customer, cat:'مبيعات', curr: inv.curr});
+  persist('daftar_items', items);
+  return vid;
+}
+
+const invProduct = document.getElementById('invProduct'), invQty = document.getElementById('invQty');
+const invCurrEl = document.getElementById('invCurr'), invAmountEl = document.getElementById('invAmount'), invMsg = document.getElementById('invMsg');
+function syncInvProduct(){
+  const p = products.find(x=>x.id===Number(invProduct.value));
+  invCurrEl.disabled = !!p;
+  if(p){
+    invCurrEl.value = p.curr;
+    const q = parseFloat(invQty.value) || 0;
+    invAmountEl.value = q>0 ? +(q*p.price).toFixed(2) : '';
+  }
+}
+invProduct.addEventListener('change', syncInvProduct);
+invQty.addEventListener('input', syncInvProduct);
+function refreshInvProducts(){
+  const prev = invProduct.value;
+  invProduct.innerHTML = '<option value="">— بدون مادة —</option>' + products.map(p=>`<option value="${p.id}">${esc(p.name)} (متوفر ${p.qty})</option>`).join('');
+  invProduct.value = products.some(p=>String(p.id)===prev) ? prev : '';
+  syncInvProduct();
+}
+
+document.querySelectorAll('#invChips button').forEach(b=>b.addEventListener('click',()=>{
+  invFilter = b.dataset.f; renderInvoices();
+}));
+document.getElementById('invSearch').addEventListener('input', renderInvoices);
+
+function renderInvoices(){
+  const body = document.getElementById('invBody'); body.innerHTML = '';
+  const today = todayStr();
+  const q = (document.getElementById('invSearch').value || '').trim().toLowerCase();
+  const dueAll = invoices.filter(i=>i.status==='due');
+
+  const cnt = {all: invoices.length, due: dueAll.length, paid: invoices.length - dueAll.length};
+  const names = {all:'الكل', due:'مستحقة', paid:'مسددة'};
+  document.querySelectorAll('#invChips button').forEach(b=>{
+    b.textContent = names[b.dataset.f] + ' (' + cnt[b.dataset.f] + ')';
+    b.classList.toggle('active', b.dataset.f===invFilter);
+  });
+
+  const list = invoices.filter(i=> (invFilter==='all' || i.status===invFilter) &&
+    (!q || i.customer.toLowerCase().includes(q) || (i.productName||'').toLowerCase().includes(q)));
+  list.sort((a,b)=> a.status!==b.status ? (a.status==='due'?-1:1)
+    : (a.status==='due' ? a.date.localeCompare(b.date) : (b.created||b.date).localeCompare(a.created||a.date)));
+
+  if(list.length===0) body.innerHTML = '<tr><td colspan="6" class="empty">ماكو فواتير</td></tr>';
+  list.forEach(inv=>{
+    const overdue = inv.status==='due' && inv.date<today;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${inv.created||inv.date}</td>
+      <td class="desc-cell">${esc(inv.customer)}${inv.productName?`<div class="sub">${esc(inv.productName)} × ${inv.qty}</div>`:''}</td>
+      <td>${kindLabel(inv)}</td>
+      <td class="${inv.status==='due'?'due-cell':'credit'}">${fmtCurr(inv.amount, inv.curr)}</td>
+      <td class="${overdue?'debit':''}">${inv.status==='due' ? 'مستحقة حتى '+inv.date+(overdue?' ⚠':'') : 'مسددة'}</td>
+      <td>${inv.status==='due'?`<button class="markbtn" data-id="${inv.id}" data-act="pay">تسديد</button> `:''}<button class="del" data-id="${inv.id}" data-act="del">✕</button></td>`;
+    body.appendChild(tr);
+  });
+
+  body.querySelectorAll('button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = Number(btn.dataset.id);
+      const inv = invoices.find(i=>i.id===id);
+      if(!inv) return;
+      if(btn.dataset.act==='pay'){
+        inv.voucherId = addReceiptFor(inv, todayStr());
+        inv.status = 'paid';
+      } else {
+        if(inv.voucherId){ items = items.filter(x=>x.id!==inv.voucherId); persist('daftar_items', items); }
+        if(inv.productId){
+          const p = products.find(x=>x.id===inv.productId);
+          if(p){ p.qty += inv.qty; persist('daftar_products', products); }
+        }
+        invoices = invoices.filter(i=>i.id!==id);
+      }
+      persist('daftar_invoices', invoices); renderAll();
+    });
+  });
+
+  const dueIQD = dueAll.filter(i=>i.curr==='IQD').reduce((s,i)=>s+i.amount,0);
+  const dueUSD = dueAll.filter(i=>i.curr==='USD').reduce((s,i)=>s+i.amount,0);
+  document.getElementById('dueIQD').textContent = fmt(dueIQD);
+  document.getElementById('dueUSD').textContent = '$'+fmt(dueUSD);
+  document.getElementById('overdueCnt').textContent = dueAll.filter(i=>i.date<today).length;
+
+  const dl = document.getElementById('custList');
+  dl.innerHTML = [...new Set(invoices.map(i=>i.customer))].map(n=>`<option value="${esc(n)}">`).join('');
+}
+
+document.getElementById('invForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  invMsg.textContent = '';
+  const customer = document.getElementById('invCustomer').value.trim();
+  const amount = parseFloat(invAmountEl.value);
+  const curr = invCurrEl.value;
+  const date = document.getElementById('invDate').value;
+  if(!customer || !amount || amount<=0 || !date) return;
+  const inv = {id: Date.now(), customer, amount, curr, date, created: todayStr(), kind: invKind, status: invKind==='cash' ? 'paid' : 'due'};
+  const p = products.find(x=>x.id===Number(invProduct.value));
+  if(p){
+    const qty = parseFloat(invQty.value) || 0;
+    if(qty<=0){ invMsg.textContent = 'اكتب كمية صحيحة'; return; }
+    if(qty>p.qty){ invMsg.textContent = 'المتوفر من "'+p.name+'" هو '+p.qty+' فقط'; return; }
+    p.qty -= qty;
+    inv.productId = p.id; inv.productName = p.name; inv.qty = qty; inv.costTotal = qty*p.cost;
+    persist('daftar_products', products);
+  }
+  if(invKind==='cash') inv.voucherId = addReceiptFor(inv, date);
+  invoices.push(inv);
+  persist('daftar_invoices', invoices);
+  document.getElementById('invCustomer').value=''; invAmountEl.value='';
+  invProduct.value=''; invQty.value=1;
+  collapseForm('invForm');
+  renderAll();
+});
+
+/* ---------- customer statement (الزبائن) ---------- */
+function renderStatement(){
+  const sel = document.getElementById('stmtCustomer');
+  const prevVal = sel.value;
+  const names = [...new Set(invoices.map(i=>i.customer))].sort((a,b)=>a.localeCompare(b,'ar'));
+  sel.innerHTML = '<option value="">— كل الزبائن —</option>' + names.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  sel.value = names.includes(prevVal) ? prevVal : '';
+
+  const body = document.getElementById('stmtBody');
+  body.innerHTML = '';
+
+  if(sel.value===''){
+    if(names.length===0){ body.innerHTML = '<div class="panel"><div class="empty">ضيف فاتورة بيها اسم زبون وراح يظهر هنا</div></div>'; return; }
+    const panel = document.createElement('div'); panel.className='panel';
+    panel.innerHTML = '<div class="panel-head">كل الزبائن (اضغط على زبون لفتح كشفه)</div><div class="tbl-wrap"><table><thead><tr><th>الزبون</th><th>الفواتير</th><th>المتبقي (دينار)</th><th>المتبقي (دولار)</th></tr></thead><tbody></tbody></table></div>';
+    const tbody = panel.querySelector('tbody');
+    names.forEach(name=>{
+      const invs = invoices.filter(i=>i.customer===name);
+      const dueIQD = invs.filter(i=>i.status==='due'&&i.curr==='IQD').reduce((s,i)=>s+i.amount,0);
+      const dueUSD = invs.filter(i=>i.status==='due'&&i.curr==='USD').reduce((s,i)=>s+i.amount,0);
+      const tr = document.createElement('tr'); tr.className = 'clickable';
+      tr.innerHTML = `<td class="desc-cell">${esc(name)}</td><td>${invs.length}</td>
+        <td class="${dueIQD>0?'due-cell':'credit'}">${fmt(dueIQD)}</td>
+        <td class="${dueUSD>0?'due-cell':'credit'}">$${fmt(dueUSD)}</td>`;
+      tr.addEventListener('click', ()=>{ sel.value = name; renderStatement(); });
+      tbody.appendChild(tr);
+    });
+    body.appendChild(panel);
+    return;
+  }
+
+  const invs = invoices.filter(i=>i.customer===sel.value).sort((a,b)=>(a.created||a.date).localeCompare(b.created||b.date));
+  const sumBy = (f)=>invs.filter(f).reduce((s,i)=>s+i.amount,0);
+  const totalIQD = sumBy(i=>i.curr==='IQD'), totalUSD = sumBy(i=>i.curr==='USD');
+  const paidIQD = sumBy(i=>i.status==='paid'&&i.curr==='IQD'), paidUSD = sumBy(i=>i.status==='paid'&&i.curr==='USD');
+
+  const summary = document.createElement('div');
+  summary.className='statement-summary';
+  summary.innerHTML = `
+    <div class="sum-box"><div class="label">إجمالي الفواتير</div><div class="val">${fmt(totalIQD)} / $${fmt(totalUSD)}</div></div>
+    <div class="sum-box"><div class="label">المسدد</div><div class="val" style="color:var(--credit)">${fmt(paidIQD)} / $${fmt(paidUSD)}</div></div>
+    <div class="sum-box"><div class="label">المتبقي</div><div class="val" style="color:var(--debit)">${fmt(totalIQD-paidIQD)} / $${fmt(totalUSD-paidUSD)}</div></div>`;
+  body.appendChild(summary);
+
+  const panel = document.createElement('div'); panel.className='panel';
+  panel.innerHTML = `<div class="panel-head">${esc(sel.value)} — كشف الحساب</div>
+    <div class="tbl-wrap"><table><thead><tr><th>التاريخ</th><th>البيان</th><th>مدين</th><th>دائن</th><th>الرصيد</th></tr></thead><tbody></tbody></table></div>`;
+  const tbody = panel.querySelector('tbody');
+  let running = {IQD:0, USD:0};
+  invs.forEach(inv=>{
+    running[inv.curr] += inv.amount;
+    if(inv.status==='paid') running[inv.curr] -= inv.amount;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${inv.created||inv.date}</td>
+      <td class="desc-cell">فاتورة ${kindLabel(inv)}${inv.productName?' — '+esc(inv.productName)+' × '+inv.qty:''} — ${inv.status==='due'?'مستحقة':'مسددة'}</td>
+      <td class="due-cell">${fmtCurr(inv.amount, inv.curr)}</td>
+      <td class="credit">${inv.status==='paid'?fmtCurr(inv.amount, inv.curr):'-'}</td>
+      <td class="bal-cell">${fmtCurr(running[inv.curr], inv.curr)}</td>`;
+    tbody.appendChild(tr);
+  });
+  body.appendChild(panel);
+}
+document.getElementById('stmtCustomer').addEventListener('change', renderStatement);
+
+/* ---------- products / stock / profit ---------- */
+function renderProducts(){
+  const body = document.getElementById('prodBody');
+  body.innerHTML = '';
+  const stock = {IQD:0, USD:0}, realized = {IQD:0, USD:0};
+  products.forEach(p=>{ stock[p.curr] += p.qty * p.cost; });
+  invoices.forEach(i=>{ if(i.productId && i.costTotal!=null) realized[i.curr] += i.amount - i.costTotal; });
+  document.getElementById('stockVal').textContent = fmt(stock.IQD)+' / $'+fmt(stock.USD);
+  document.getElementById('realizedVal').textContent = fmt(realized.IQD)+' / $'+fmt(realized.USD);
+  refreshInvProducts();
+
+  if(products.length===0){ body.innerHTML='<tr><td colspan="7" class="empty">ماكو مواد مضافة بعد</td></tr>'; return; }
+  products.slice().reverse().forEach(p=>{
+    const profit = p.price - p.cost;
+    const marginPct = p.price>0 ? (profit/p.price*100) : 0;
+    const warn = p.qty<=0 ? '<div class="sub debit">نفد المخزون</div>' : (p.qty<=5 ? '<div class="sub" style="color:var(--accent)">قارب على النفاد</div>' : '');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td class="desc-cell">${esc(p.name)}${warn}</td>
+      <td><input type="number" class="qty-input" data-id="${p.id}" value="${p.qty}" step="1"></td>
+      <td>${fmtCurr(p.cost,p.curr)}</td><td>${fmtCurr(p.price,p.curr)}</td>
+      <td class="${profit<0?'debit':'credit'}">${fmtCurr(profit,p.curr)}</td>
+      <td class="${marginPct<0?'debit':'credit'}">${marginPct.toFixed(1)}%</td>
+      <td><button class="del" data-id="${p.id}">✕</button></td>`;
+    body.appendChild(tr);
+  });
+  body.querySelectorAll('.qty-input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const p = products.find(x=>x.id===Number(inp.dataset.id));
+      if(!p) return;
+      p.qty = parseFloat(inp.value) || 0;
+      persist('daftar_products', products); renderAll();
+    });
+  });
+  body.querySelectorAll('.del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      products = products.filter(p=>p.id !== Number(btn.dataset.id));
+      persist('daftar_products', products); renderAll();
+    });
+  });
+}
+
+document.getElementById('prodForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const name = document.getElementById('prodName').value.trim();
+  const cost = parseFloat(document.getElementById('prodCost').value);
+  const price = parseFloat(document.getElementById('prodPrice').value);
+  const qty = parseFloat(document.getElementById('prodQty').value) || 0;
+  const curr = document.getElementById('prodCurr').value;
+  if(!name || isNaN(cost) || isNaN(price)) return;
+  products.push({id: Date.now(), name, qty, cost, price, curr});
+  persist('daftar_products', products);
+  ['prodName','prodCost','prodPrice'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('prodQty').value = 0;
+  collapseForm('prodForm');
+  renderAll();
+});
+
+/* ---------- daily reconciliation ---------- */
+let reconciliations = load('daftar_reconciliations');
+
+function renderReconciliations(){
+  const body = document.getElementById('reconBody');
+  body.innerHTML = '';
+  const sorted = [...reconciliations].sort((a,b)=> b.date.localeCompare(a.date) || b.id-a.id);
+  if(sorted.length===0){ body.innerHTML = '<tr><td colspan="4" class="empty">ماكو مطابقات مسجلة بعد</td></tr>'; return; }
+  sorted.slice(0,20).forEach(r=>{
+    const okIQD = Math.abs(r.diffIQD) < 0.01;
+    const okUSD = Math.abs(r.diffUSD) < 0.01;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.date}</td><td>${r.time}</td>
+      <td class="${okIQD?'credit':'debit'}">${okIQD?'مطابق':(r.diffIQD>0?'+':'-')+fmt(Math.abs(r.diffIQD))}</td>
+      <td class="${okUSD?'credit':'debit'}">${okUSD?'مطابق':(r.diffUSD>0?'+$':'-$')+fmt(Math.abs(r.diffUSD))}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+document.getElementById('reconBtn').addEventListener('click', ()=>{
+  const actualIQD = parseFloat(document.getElementById('reconIQD').value) || 0;
+  const actualUSD = parseFloat(document.getElementById('reconUSD').value) || 0;
+  const now = new Date();
+  reconciliations.push({
+    id: now.getTime(), date: todayStr(), time: now.toTimeString().slice(0,5),
+    expectedIQD: curBoxIQD, actualIQD, diffIQD: actualIQD - curBoxIQD,
+    expectedUSD: curBoxUSD, actualUSD, diffUSD: actualUSD - curBoxUSD
+  });
+  persist('daftar_reconciliations', reconciliations);
+  document.getElementById('reconIQD').value = ''; document.getElementById('reconUSD').value = '';
+  renderReconciliations(); checkReconReminder();
+});
+
+function checkReconReminder(){
+  const doneToday = reconciliations.some(r=>r.date===todayStr());
+  document.getElementById('reconBanner').style.display = doneToday ? 'none' : 'flex';
+}
+
+document.getElementById('reconBannerBtn').addEventListener('click', ()=>{
+  document.querySelector('.tabs button[data-tab="box"]').click();
+  document.getElementById('reconSection').scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+function renderAll(){
+  render(); renderInvoices(); renderStatement(); renderProducts();
+  renderReconciliations(); checkReconReminder();
+}
+renderAll();
+</script>
+</body>
+</html>
